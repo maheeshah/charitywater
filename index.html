@@ -1,194 +1,317 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clean Water Collector</title>
+
 <style>
 body{
-font-family:Arial,sans-serif;
-text-align:center;
-background:linear-gradient(#87CEEB,#d4f5d4);
-margin:0;
-padding:20px;
+    margin:0;
+    font-family:Arial, sans-serif;
+    text-align:center;
+    background:linear-gradient(to bottom,#87ceeb,#d9f7d9);
 }
+
+h1{
+    margin-top:20px;
+}
+
 #stats{
-display:flex;
-justify-content:center;
-gap:20px;
-flex-wrap:wrap;
-margin-bottom:15px;
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    flex-wrap:wrap;
+    margin:20px;
 }
+
 .card{
-background:white;
-padding:15px;
-border-radius:12px;
-min-width:120px;
-box-shadow:0 2px 8px rgba(0,0,0,.2);
+    background:white;
+    padding:15px;
+    border-radius:12px;
+    min-width:120px;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
 }
+
 #gameArea{
-width:90%;
-max-width:900px;
-height:500px;
-margin:auto;
-background:#e8f7ff;
-border:4px solid #4aa3df;
-border-radius:15px;
-position:relative;
-overflow:hidden;
+    width:90%;
+    max-width:900px;
+    height:500px;
+    background:#eaf9ff;
+    border:4px solid #4da8da;
+    margin:auto;
+    border-radius:15px;
+    position:relative;
+    overflow:hidden;
 }
+
 .drop{
-position:absolute;
-font-size:40px;
-cursor:pointer;
-user-select:none;
+    position:absolute;
+    font-size:40px;
+    cursor:pointer;
+    user-select:none;
 }
+
+#message{
+    font-weight:bold;
+    color:green;
+    min-height:25px;
+}
+
 #plants{
-margin-top:20px;
+    margin:20px;
 }
+
 .plant{
-display:inline-block;
-padding:10px;
-margin:5px;
-border-radius:10px;
-background:#ddd;
+    display:inline-block;
+    margin:5px;
+    padding:10px;
+    border-radius:10px;
+    background:#ddd;
 }
-.unlocked{background:#9be79b;}
+
+.unlocked{
+    background:#90ee90;
+}
+
 button{
-padding:10px 20px;
-font-size:16px;
-border:none;
-border-radius:8px;
-background:#1f78d1;
-color:white;
-cursor:pointer;
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    background:#1976d2;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    background:#125ea9;
 }
 </style>
 </head>
+
 <body>
+
 <h1>💧 Clean Water Collector</h1>
+
 <div id="stats">
-<div class="card">Score: <span id="score">0</span></div>
-<div class="card">Level: <span id="level">1</span></div>
-<div class="card">Time: <span id="time">60</span>s</div>
-<div class="card">Plant: <span id="currentPlant">🌱 Seed</span></div>
+    <div class="card">Score<br><span id="score">0</span></div>
+    <div class="card">Level<br><span id="level">1</span></div>
+    <div class="card">Time<br><span id="time">60</span>s</div>
+    <div class="card">Plant<br><span id="currentPlant">🌱 Seed</span></div>
 </div>
-<h3 id="message">Collect clean water and avoid dirty water!</h3>
+
+<div id="message">
+    Collect clean water and avoid dirty water!
+</div>
+
 <div id="gameArea"></div>
+
+<h2>Plant Unlocks</h2>
 <div id="plants"></div>
-<br>
+
 <button onclick="restartGame()">Restart Game</button>
+
 <script>
-const plants=[
-{name:'Seed',cost:0,emoji:'🌱'},
-{name:'Sprout',cost:50,emoji:'🪴'},
-{name:'Flower',cost:100,emoji:'🌸'},
-{name:'Tree',cost:200,emoji:'🌳'},
-{name:'Forest',cost:350,emoji:'🌲'}
+
+const plants = [
+    {name:"Seed", cost:0, emoji:"🌱"},
+    {name:"Sprout", cost:50, emoji:"🪴"},
+    {name:"Flower", cost:100, emoji:"🌸"},
+    {name:"Tree", cost:200, emoji:"🌳"},
+    {name:"Forest", cost:350, emoji:"🌲"}
 ];
-const facts=[
-'Clean water helps kids stay healthy.',
-'Safe water improves communities.',
-'Clean water helps plants and agriculture grow.'
+
+const facts = [
+    "Clean water helps children stay healthy and attend school.",
+    "Access to clean water improves community health.",
+    "Clean water supports agriculture and plant growth."
 ];
-let score=0;
-let level=1;
-let timeLeft=60;
-let plantLevel=0;
-let gameRunning=true;
-const goals={1:50,2:120,3:200};
-const gameArea=document.getElementById('gameArea');
-function renderPlants(){
-const container=document.getElementById('plants');
-container.innerHTML='';
-plants.forEach((p,i)=>{
-const div=document.createElement('div');
-div.className='plant '+(i<=plantLevel?'unlocked':'');
-div.textContent=`${p.emoji} ${p.name} (${p.cost})`;
-container.appendChild(div);
-});
-}
-function updateDisplay(){
-document.getElementById('score').textContent=score;
-document.getElementById('level').textContent=level;
-document.getElementById('time').textContent=timeLeft;
-document.getElementById('currentPlant').textContent=`${plants[plantLevel].emoji} ${plants[plantLevel].name}`;
-renderPlants();
-}
-function spawnDrop(){
-if(!gameRunning) return;
-const drop=document.createElement('div');
-drop.className='drop';
-const clean=Math.random()>0.3;
-drop.textContent=clean?'💧':'🟤';
-drop.style.left=Math.random()*90+'%';
-drop.style.top='0px';
-drop.onclick=function(){
-if(clean){
-score+=10;
-message.textContent='+10 Clean Water';
-}else{
-score=Math.max(0,score-5);
-message.textContent='-5 Dirty Water';
-}
-for(let i=plants.length-1;i>=0;i--){
-if(score>=plants[i].cost){
-plantLevel=i;
-break;
-}
-}
-updateDisplay();
-drop.remove();
-if(score>=goals[level]) completeLevel();
+
+const goals = {
+    1:50,
+    2:120,
+    3:200
 };
-gameArea.appendChild(drop);
-let y=0;
-const fall=setInterval(()=>{
-y+=4+level;
-drop.style.top=y+'px';
-if(y>470){
-clearInterval(fall);
-drop.remove();
+
+let score = 0;
+let level = 1;
+let timeLeft = 60;
+let plantLevel = 0;
+let gameRunning = true;
+
+const gameArea = document.getElementById("gameArea");
+const message = document.getElementById("message");
+
+function updatePlants(){
+    const container = document.getElementById("plants");
+    container.innerHTML = "";
+
+    plants.forEach((plant,index)=>{
+        const div = document.createElement("div");
+        div.className = "plant";
+
+        if(index <= plantLevel){
+            div.classList.add("unlocked");
+        }
+
+        div.textContent =
+            `${plant.emoji} ${plant.name} (${plant.cost})`;
+
+        container.appendChild(div);
+    });
 }
-},50);
+
+function updateDisplay(){
+    document.getElementById("score").textContent = score;
+    document.getElementById("level").textContent = level;
+    document.getElementById("time").textContent = timeLeft;
+
+    document.getElementById("currentPlant").textContent =
+        plants[plantLevel].emoji + " " + plants[plantLevel].name;
+
+    updatePlants();
 }
+
+function unlockPlant(){
+    for(let i = plants.length - 1; i >= 0; i--){
+        if(score >= plants[i].cost){
+            plantLevel = i;
+            break;
+        }
+    }
+}
+
 function completeLevel(){
-gameRunning=false;
-alert('Level Complete!
-'+facts[level-1]);
-if(level<3){
-level++;
-timeLeft=60;
-gameRunning=true;
-}else{
-alert('You beat the game! Final Score: '+score);
+
+    gameRunning = false;
+
+    if(level < 3){
+
+        alert(
+            "🎉 Level Complete!\n\n" +
+            facts[level - 1]
+        );
+
+        level++;
+        timeLeft = 60;
+
+        gameRunning = true;
+
+    } else {
+
+        alert(
+            "🏆 Congratulations!\n\n" +
+            "You completed all levels!\n\n" +
+            "Final Score: " + score
+        );
+
+    }
+
+    updateDisplay();
 }
-updateDisplay();
+
+function createDrop(){
+
+    if(!gameRunning) return;
+
+    const drop = document.createElement("div");
+    drop.classList.add("drop");
+
+    const clean = Math.random() > 0.3;
+
+    drop.textContent = clean ? "💧" : "🟤";
+    drop.style.left = Math.random() * 90 + "%";
+    drop.style.top = "0px";
+
+    drop.onclick = function(){
+
+        if(clean){
+            score += 10;
+            message.textContent = "+10 Clean Water!";
+        }else{
+            score = Math.max(0, score - 5);
+            message.textContent = "-5 Dirty Water!";
+        }
+
+        unlockPlant();
+        updateDisplay();
+
+        drop.remove();
+
+        if(score >= goals[level]){
+            completeLevel();
+        }
+    };
+
+    gameArea.appendChild(drop);
+
+    let position = 0;
+
+    const fallInterval = setInterval(()=>{
+
+        if(!document.body.contains(drop)){
+            clearInterval(fallInterval);
+            return;
+        }
+
+        position += (4 + level);
+
+        drop.style.top = position + "px";
+
+        if(position > 450){
+            clearInterval(fallInterval);
+            drop.remove();
+        }
+
+    },50);
 }
+
 function restartGame(){
-score=0;
-level=1;
-timeLeft=60;
-plantLevel=0;
-gameRunning=true;
-gameArea.innerHTML='';
-updateDisplay();
+
+    score = 0;
+    level = 1;
+    timeLeft = 60;
+    plantLevel = 0;
+    gameRunning = true;
+
+    gameArea.innerHTML = "";
+
+    message.textContent =
+        "Collect clean water and avoid dirty water!";
+
+    updateDisplay();
 }
+
 setInterval(()=>{
-if(!gameRunning) return;
-timeLeft--;
-updateDisplay();
-if(timeLeft<=0){
-alert('Game Over! Score: '+score);
-restartGame();
-}
+
+    if(!gameRunning) return;
+
+    timeLeft--;
+
+    updateDisplay();
+
+    if(timeLeft <= 0){
+
+        alert(
+            "⏰ Time's Up!\n\n" +
+            "Final Score: " + score
+        );
+
+        restartGame();
+    }
+
 },1000);
 
 setInterval(()=>{
-spawnDrop();
+
+    createDrop();
+
 },700);
 
 updateDisplay();
-</script>
-</body>
 
+</script>
+
+</body>
+</html>

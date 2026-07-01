@@ -1,228 +1,194 @@
-export default function CleanWaterCollectorGame() {
-  const React = window.React;
-  const { useState, useEffect } = React;
-
-  const plants = [
-    { name: 'Seed', cost: 0, emoji: '🌱' },
-    { name: 'Sprout', cost: 50, emoji: '🪴' },
-    { name: 'Flower', cost: 100, emoji: '�' },
-    { name: 'Tree', cost: 200, emoji: '🌳' },
-    { name: 'Forest', cost: 350, emoji: '🌲' }
-  ];
-
-  const facts = [
-    'Clean water helps children stay healthy and attend school.',
-    'Access to clean water improves community health.',
-    'Clean water supports agriculture and plant growth.'
-  ];
-
-
-  const [score, setScore] = useState(0);
-  const [level, setLevel] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [droplets, setDroplets] = useState([]);
-  const [plantLevel, setPlantLevel] = useState(0);
-  const [message, setMessage] = useState('');
-  const [gameOver, setGameOver] = useState(false);
-  const [wonLevel, setWonLevel] = useState(false);
-  const levelGoals = { 1: 50, 2: 120, 3: 200 };
-
-
-  useEffect(() => {
-    if (gameOver || wonLevel) return;
-
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          setGameOver(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-
-    return () => clearInterval(timer);
-  }, [gameOver, wonLevel]);
-
-
-  useEffect(() => {
-    if (gameOver || wonLevel) return;
-
-
-    const spawn = setInterval(() => {
-      setDroplets(prev => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          clean: Math.random() > 0.3,
-          x: Math.random() * 90,
-          y: 0
-        }
-      ]);
-    }, Math.max(300, 900 - level * 150));
-    return () => clearInterval(spawn);
-  }, [level, gameOver, wonLevel]);
-  useEffect(() => {
-    if (gameOver || wonLevel) return;
-
-
-    const move = setInterval(() => {
-      setDroplets(prev =>
-        prev
-          .map(d => ({ ...d, y: d.y + 4 + level }))
-          .filter(d => d.y < 95)
-      );
-    }, 100);
-    return () => clearInterval(move);
-  }, [level, gameOver, wonLevel]);
-  const collectDroplet = droplet => {
-    let newScore = score;
-
-    if (droplet.clean) {
-      newScore += 10;
-      setMessage('+10 Clean Water');
-    } else {
-      newScore = Math.max(0, newScore - 5);
-      setMessage('-5 Dirty Water');
-    }
-
-    setScore(newScore);
-    setDroplets(prev => prev.filter(d => d.id !== droplet.id));
-    for (let i = plants.length - 1; i >= 0; i--) {
-      if (newScore >= plants[i].cost) {
-        if (i > plantLevel) {
-          setMessage(`Unlocked ${plants[i].name}!`);
-        }
-        setPlantLevel(i);
-        break;
-      }
-    }
-
-
-    if (newScore >= levelGoals[level]) {
-      setWonLevel(true);
-    }
-  };
-
-  const nextLevel = () => {
-    if (level < 3) {
-      setLevel(level + 1);
-      setTimeLeft(60);
-      setDroplets([]);
-      setWonLevel(false);
-    } else {
-      setGameOver(true);
-    }
-  };
-
-
-  const restartGame = () => {
-    setScore(0);
-    setLevel(1);
-    setTimeLeft(60);
-    setDroplets([]);
-    setPlantLevel(0);
-    setWonLevel(false);
-    setGameOver(false);
-    setMessage('');
-  };
-
-  return (
-    <div className='min-h-screen bg-gradient-to-b from-sky-200 to-green-100 p-6'>
-      <div className='max-w-6xl mx-auto'>
-        <h1 className='text-5xl font-bold text-center mb-4'>💧 Clean Water Collector</h1>
-        <div className='grid md:grid-cols-4 gap-4 mb-6'>
-          <div className='bg-white p-4 rounded-3xl shadow'>
-            <h3 className='font-bold'>Score</h3>
-            <div className='text-3xl'>{score}</div>
-          </div>
-
-          <div className='bg-white p-4 rounded-3xl shadow'>
-            <h3 className='font-bold'>Level</h3>
-            <div className='text-3xl'>{level}</div>
-          </div>
-
-          <div className='bg-white p-4 rounded-3xl shadow'>
-            <h3 className='font-bold'>Time</h3>
-            <div className='text-3xl'>{timeLeft}s</div>
-          </div>
-
-
-          <div className='bg-white p-4 rounded-3xl shadow'>
-            <h3 className='font-bold'>Plant</h3>
-            <div className='text-2xl'>{plants[plantLevel].emoji} {plants[plantLevel].name}</div>
-          </div>
-        </div>
-
-        <div className='text-center font-bold text-green-700 mb-3'>{message}</div>
-
-
-        <div className='relative h-[500px] bg-blue-50 border-4 border-blue-400 rounded-3xl overflow-hidden'>
-          {droplets.map(droplet => (
-            <button
-              key={droplet.id}
-              onClick={() => collectDroplet(droplet)}
-              className='absolute text-5xl hover:scale-125 transition-transform'
-              style={{
-                left: `${droplet.x}%`,
-                top: `${droplet.y}%`
-              }}
-            >
-              {droplet.clean ? '💧' : '🟤'}
-            </button>
-          ))}
-        </div>
-
-        <div className='bg-white rounded-3xl p-4 shadow mt-6'>
-          <h2 className='font-bold mb-3'>Plant Unlocks</h2>
-          <div className='flex flex-wrap gap-3'>
-            {plants.map((plant, index) => (
-              <div
-                key={plant.name}
-                className={`px-4 py-2 rounded-2xl ${plantLevel >= index ? 'bg-green-300' : 'bg-gray-200'}`}
-              >
-                {plant.emoji} {plant.name} ({plant.cost})
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {wonLevel && (
-          <div className='bg-green-200 p-6 rounded-3xl shadow mt-6 text-center'>
-            <h2 className='text-3xl font-bold'>🎉 Level Complete!</h2>
-            <p className='my-3'>{facts[level - 1]}</p>
-            <button
-              onClick={nextLevel}
-              className='bg-green-600 text-white px-6 py-3 rounded-2xl'
-            >
-              {level < 3 ? 'Next Level' : 'Finish Game'}
-            </button>
-          </div>
-        )}
-        {gameOver && (
-          <div className='bg-yellow-200 p-6 rounded-3xl shadow mt-6 text-center'>
-            <h2 className='text-3xl font-bold'>🏆 Game Over</h2>
-            <p>Final Score: {score}</p>
-            <p>Highest Plant: {plants[plantLevel].name}</p>
-            <button
-              onClick={restartGame}
-              className='mt-3 bg-blue-600 text-white px-6 py-3 rounded-2xl'
-            >
-              Play Again
-            </button>
-          </div>
-        )}
-
-
-        <div className='bg-white rounded-3xl p-4 shadow mt-6'>
-          <h3 className='font-bold'>Mission</h3>
-          <p>
-            Collect clean water droplets for points. Avoid dirty water. Unlock plants as your score grows and complete all three levels to help communities thrive through access to clean water.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clean Water Collector</title>
+<style>
+body{
+font-family:Arial,sans-serif;
+text-align:center;
+background:linear-gradient(#87CEEB,#d4f5d4);
+margin:0;
+padding:20px;
 }
+#stats{
+display:flex;
+justify-content:center;
+gap:20px;
+flex-wrap:wrap;
+margin-bottom:15px;
+}
+.card{
+background:white;
+padding:15px;
+border-radius:12px;
+min-width:120px;
+box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+#gameArea{
+width:90%;
+max-width:900px;
+height:500px;
+margin:auto;
+background:#e8f7ff;
+border:4px solid #4aa3df;
+border-radius:15px;
+position:relative;
+overflow:hidden;
+}
+.drop{
+position:absolute;
+font-size:40px;
+cursor:pointer;
+user-select:none;
+}
+#plants{
+margin-top:20px;
+}
+.plant{
+display:inline-block;
+padding:10px;
+margin:5px;
+border-radius:10px;
+background:#ddd;
+}
+.unlocked{background:#9be79b;}
+button{
+padding:10px 20px;
+font-size:16px;
+border:none;
+border-radius:8px;
+background:#1f78d1;
+color:white;
+cursor:pointer;
+}
+</style>
+</head>
+<body>
+<h1>💧 Clean Water Collector</h1>
+<div id="stats">
+<div class="card">Score: <span id="score">0</span></div>
+<div class="card">Level: <span id="level">1</span></div>
+<div class="card">Time: <span id="time">60</span>s</div>
+<div class="card">Plant: <span id="currentPlant">🌱 Seed</span></div>
+</div>
+<h3 id="message">Collect clean water and avoid dirty water!</h3>
+<div id="gameArea"></div>
+<div id="plants"></div>
+<br>
+<button onclick="restartGame()">Restart Game</button>
+<script>
+const plants=[
+{name:'Seed',cost:0,emoji:'🌱'},
+{name:'Sprout',cost:50,emoji:'🪴'},
+{name:'Flower',cost:100,emoji:'🌸'},
+{name:'Tree',cost:200,emoji:'🌳'},
+{name:'Forest',cost:350,emoji:'🌲'}
+];
+const facts=[
+'Clean water helps kids stay healthy.',
+'Safe water improves communities.',
+'Clean water helps plants and agriculture grow.'
+];
+let score=0;
+let level=1;
+let timeLeft=60;
+let plantLevel=0;
+let gameRunning=true;
+const goals={1:50,2:120,3:200};
+const gameArea=document.getElementById('gameArea');
+function renderPlants(){
+const container=document.getElementById('plants');
+container.innerHTML='';
+plants.forEach((p,i)=>{
+const div=document.createElement('div');
+div.className='plant '+(i<=plantLevel?'unlocked':'');
+div.textContent=`${p.emoji} ${p.name} (${p.cost})`;
+container.appendChild(div);
+});
+}
+function updateDisplay(){
+document.getElementById('score').textContent=score;
+document.getElementById('level').textContent=level;
+document.getElementById('time').textContent=timeLeft;
+document.getElementById('currentPlant').textContent=`${plants[plantLevel].emoji} ${plants[plantLevel].name}`;
+renderPlants();
+}
+function spawnDrop(){
+if(!gameRunning) return;
+const drop=document.createElement('div');
+drop.className='drop';
+const clean=Math.random()>0.3;
+drop.textContent=clean?'💧':'🟤';
+drop.style.left=Math.random()*90+'%';
+drop.style.top='0px';
+drop.onclick=function(){
+if(clean){
+score+=10;
+message.textContent='+10 Clean Water';
+}else{
+score=Math.max(0,score-5);
+message.textContent='-5 Dirty Water';
+}
+for(let i=plants.length-1;i>=0;i--){
+if(score>=plants[i].cost){
+plantLevel=i;
+break;
+}
+}
+updateDisplay();
+drop.remove();
+if(score>=goals[level]) completeLevel();
+};
+gameArea.appendChild(drop);
+let y=0;
+const fall=setInterval(()=>{
+y+=4+level;
+drop.style.top=y+'px';
+if(y>470){
+clearInterval(fall);
+drop.remove();
+}
+},50);
+}
+function completeLevel(){
+gameRunning=false;
+alert('Level Complete!
+'+facts[level-1]);
+if(level<3){
+level++;
+timeLeft=60;
+gameRunning=true;
+}else{
+alert('You beat the game! Final Score: '+score);
+}
+updateDisplay();
+}
+function restartGame(){
+score=0;
+level=1;
+timeLeft=60;
+plantLevel=0;
+gameRunning=true;
+gameArea.innerHTML='';
+updateDisplay();
+}
+setInterval(()=>{
+if(!gameRunning) return;
+timeLeft--;
+updateDisplay();
+if(timeLeft<=0){
+alert('Game Over! Score: '+score);
+restartGame();
+}
+},1000);
+
+setInterval(()=>{
+spawnDrop();
+},700);
+
+updateDisplay();
+</script>
+</body>
+
